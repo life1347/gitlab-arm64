@@ -61,7 +61,7 @@ jobs:
         with:
           context: .
           # Only builds on the main branch will trigger the push, and forked repositories are excluded
-          push: github.ref == 'refs/heads/main'
+          push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ env.push_arm64_tags }}
           platforms: linux/arm64
           build-args: |
