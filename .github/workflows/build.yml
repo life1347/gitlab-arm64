@@ -8,6 +8,7 @@ on:
       # so there is no need to trigger it when pushing.
       - autobump**
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
