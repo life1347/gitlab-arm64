@@ -16,12 +16,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - version: ${{ fromJSON(vars.GITLAB_VERSION) }}
+        GITLAB_VERSION: ${{ fromJSON(vars.GITLAB_VERSION) }}
     env:
-      RELEASE_VERSION:  ${{ matrix.version }}-ee.0
+      RELEASE_VERSION:  ${{ matrix.GITLAB_VERSION }}-ee.0
       RELEASE_PACKAGE: gitlab-ee
-      PUSH_TAGS: ${{ matrix.version }}-ee
+      PUSH_TAGS: ${{ matrix.GITLAB_VERSION }}-ee
     steps:
       - uses: actions/checkout@v3
 
