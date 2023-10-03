@@ -17,13 +17,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - RELEASE_PACKAGE: gitlab-ce
-            RELEASE_VERSION: 16.4.1-ce.0
-            PUSH_TAGS: 16.4.1-ce.0,16.4.1-ce
-          - RELEASE_PACKAGE: gitlab-ee
-            RELEASE_VERSION: 16.4.1-ee.0
-            PUSH_TAGS: 16.4.1-ee.0,16.4.1-ee
-
+          - version: ${{ fromJSON(vars.GITLAB_VERSION) }}
+    env:
+      RELEASE_VERSION:  ${{ matrix.version }}-ee.0
+      RELEASE_PACKAGE: gitlab-ee
+      PUSH_TAGS: ${{ matrix.version }}-ee
     steps:
       - uses: actions/checkout@v3
 
@@ -46,7 +44,7 @@ jobs:
       - name: Generate tags
         id: generate-tags
         run: |
-          push_tags=$(echo ${{ matrix.PUSH_TAGS }} | tr ',' '\n' | xargs -I {} echo "docker.io/${{ secrets.DOCKERHUB_USERNAME }}/gitlab:{}" | tr '\n' ',')
+          push_tags=$(echo ${{ env.PUSH_TAGS }} | tr ',' '\n' | xargs -I {} echo "docker.io/${{ secrets.DOCKERHUB_USERNAME }}/gitlab:{}" | tr '\n' ',')
           echo "push_tags=${push_tags}" >> $GITHUB_ENV
 
       # Generate the push tags for arm64 image (add '-arm64' suffix to the push tags)
@@ -65,8 +63,8 @@ jobs:
           tags: ${{ env.push_arm64_tags }}
           platforms: linux/arm64
           build-args: |
-            RELEASE_PACKAGE=${{ matrix.RELEASE_PACKAGE }}
-            RELEASE_VERSION=${{ matrix.RELEASE_VERSION }}
+            RELEASE_PACKAGE=${{ env.RELEASE_PACKAGE }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
 
       # Create multi-arch manifest (x86-64 reuses official image, arm64 uses the image built in the previous step)
       - name: Docker multi-arch manifest
@@ -74,8 +72,8 @@ jobs:
         if: github.ref == 'refs/heads/main'
         shell: python
         env:
-          RELEASE_PACKAGE: ${{ matrix.RELEASE_PACKAGE }}
-          RELEASE_VERSION: ${{ matrix.RELEASE_VERSION }}
+          RELEASE_PACKAGE: ${{ env.RELEASE_PACKAGE }}
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
         run: |
           import os
 
