@@ -16,22 +16,30 @@ on:
 jobs:
   version:
     runs-on: ubuntu-latest
+    outputs:
+      GITLAB_VERSION: ${{ steps.check-gitlab-version.outputs.GITLAB_VERSION }}
     steps:
       - name: check version
         id: check-gitlab-version
         run: |
           LATEST_VERSION=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://gitlab.com/gitlab-org/gitlab.git | tail -1 | awk -F'/' '{print $NF}' | awk '{print $1}'| sed 's/-ee^{}//'|awk -F'v' '{print $NF}')
           
-          if [ ! $(docker manifest inspect life1347/gitlab:${LATEST_VERSION}-ee > /dev/null ; echo $?) ];
+          echo "Latest Tag: $LATEST_VERSION"
+          
+          if [ "$(docker manifest inspect life1347/gitlab:${LATEST_VERSION}-ee > /dev/null ; echo $?)" != "0" ];
           then
             # https://github.com/orgs/community/discussions/26313#discussioncomment-3251388
-            echo "GITLAB_VERSION=$LATEST_VERSION" >> $GITHUB_OUTPUT
+            echo "GITLAB_VERSION=${LATEST_VERSION}" >> $GITHUB_OUTPUT
           else
             echo "No new GitLab version, abort."
+            echo "GITLAB_VERSION=''" >> $GITHUB_OUTPUT
           fi
 
   build:
+    if: ${{ needs.version.outputs.GITLAB_VERSION != '' }}
     runs-on: ubuntu-latest
+    needs:
+      - version
     strategy:
       fail-fast: false
       # matrix:
@@ -40,8 +48,8 @@ jobs:
       RELEASE_PACKAGE: gitlab-ee
       # RELEASE_VERSION:  ${{ matrix.GITLAB_VERSION }}-ee.0
       # PUSH_TAGS: ${{ matrix.GITLAB_VERSION }}-ee
-      RELEASE_VERSION: ${{ steps.check-gitlab-version.outputs.GITLAB_VERSION }}-ee.0
-      PUSH_TAGS: ${{ steps.check-gitlab-version.outputs.GITLAB_VERSION }}-ee
+      RELEASE_VERSION: ${{ needs.version.outputs.GITLAB_VERSION }}-ee.0
+      PUSH_TAGS: ${{ needs.version.outputs.GITLAB_VERSION }}-ee
     steps:
       - uses: actions/checkout@v3
 
