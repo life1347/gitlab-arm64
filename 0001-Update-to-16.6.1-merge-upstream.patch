@@ -1,0 +1,25 @@
+From 8646c1a41f104f95c679b0019a44f84d8f2e4473 Mon Sep 17 00:00:00 2001
+From: zengxs <xiangsong.zeng@outlook.com>
+Date: Fri, 1 Dec 2023 10:35:35 +0800
+Subject: [PATCH] Update to 16.6.1 & merge upstream
+
+---
+ assets/wrapper              | 2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/assets/wrapper b/assets/wrapper
+index 0668387..15d453a 100755
+--- a/assets/wrapper
++++ b/assets/wrapper
+@@ -24,7 +24,7 @@ function clean_stale_pids() {
+         #  - any (s)ocket or regular (f)ile
+         #  - by the name of "*.pid" or "socket.?"
+         #  - and delete them
+-        find $x \
++        find $x -maxdepth 4 \
+             \( \
+               -type f \
+               -o -type s \
+-- 
+2.40.0
+

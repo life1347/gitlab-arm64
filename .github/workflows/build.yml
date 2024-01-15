@@ -10,17 +10,38 @@ on:
   pull_request:
   workflow_dispatch:
 
+  schedule:
+    - cron:  '0 0 * * *'
+
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check version
+        id: check-gitlab-version
+        run: |
+          LATEST_VERSION=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://gitlab.com/gitlab-org/gitlab.git | tail -1 | awk -F'/' '{print $NF}' | awk '{print $1}'| sed 's/-ee^{}//'|awk -F'v' '{print $NF}')
+          
+          if [ ! $(docker manifest inspect life1347/gitlab:${LATEST_VERSION}-ee > /dev/null ; echo $?) ];
+          then
+            # https://github.com/orgs/community/discussions/26313#discussioncomment-3251388
+            echo "GITLAB_VERSION=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "No new GitLab version, abort."
+          fi
+
   build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        GITLAB_VERSION: ${{ fromJSON(vars.GITLAB_VERSION) }}
+      # matrix:
+      #   GITLAB_VERSION: ${{ fromJSON(vars.GITLAB_VERSION) }}
     env:
-      RELEASE_VERSION:  ${{ matrix.GITLAB_VERSION }}-ee.0
       RELEASE_PACKAGE: gitlab-ee
-      PUSH_TAGS: ${{ matrix.GITLAB_VERSION }}-ee
+      # RELEASE_VERSION:  ${{ matrix.GITLAB_VERSION }}-ee.0
+      # PUSH_TAGS: ${{ matrix.GITLAB_VERSION }}-ee
+      RELEASE_VERSION: ${{ steps.check-gitlab-version.outputs.GITLAB_VERSION }}-ee.0
+      PUSH_TAGS: ${{ steps.check-gitlab-version.outputs.GITLAB_VERSION }}-ee
     steps:
       - uses: actions/checkout@v3
 
