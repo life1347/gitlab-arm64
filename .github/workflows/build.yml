@@ -22,7 +22,6 @@ jobs:
       - name: check version
         id: check-gitlab-version
         run: |
-          #!/bin/bash
 
           # Initialize the LVersion variable as an empty string
           newVers=""
@@ -41,9 +40,6 @@ jobs:
           # Trim trailing space from newVers
           newVers=$(echo $newVers | xargs)
 
-          # Print out versions with no Docker image
-          echo "Versions without a Docker image: $newVers"
-
           # Convert the versions into a JSON array
           json_array="["
           for version in $newVers; do
@@ -55,7 +51,7 @@ jobs:
           json_array+="]"
 
           # Print the JSON array
-          echo $json_array >> $GITHUB_OUTPUT
+          echo GITLAB_VERSION=${json_array}" >> $GITHUB_OUTPUT
 
   build:
     if: ${{ needs.version.outputs.GITLAB_VERSION != '' }}
