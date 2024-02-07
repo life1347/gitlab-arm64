@@ -22,18 +22,40 @@ jobs:
       - name: check version
         id: check-gitlab-version
         run: |
-          LATEST_VERSION=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://gitlab.com/gitlab-org/gitlab.git | tail -1 | awk -F'/' '{print $NF}' | awk '{print $1}'| sed 's/-ee^{}//'|awk -F'v' '{print $NF}')
-          
-          echo "Latest Tag: $LATEST_VERSION"
-          
-          if [ "$(docker manifest inspect life1347/gitlab:${LATEST_VERSION}-ee > /dev/null ; echo $?)" != "0" ];
-          then
-            # https://github.com/orgs/community/discussions/26313#discussioncomment-3251388
-            echo "GITLAB_VERSION=${LATEST_VERSION}" >> $GITHUB_OUTPUT
-          else
-            echo "No new GitLab version, abort."
-            echo "GITLAB_VERSION=''" >> $GITHUB_OUTPUT
-          fi
+          #!/bin/bash
+
+          # Initialize the LVersion variable as an empty string
+          newVers=""
+
+          # Capture the output of the original command
+          versions=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://gitlab.com/gitlab-org/gitlab.git | tail -20 | grep -v "rc" | grep -v "{}" | awk -F'/' '{print $NF}' | awk '{print $1}' | sed 's/-ee//' | awk -F'v' '{print $NF}')
+
+          # Loop over each version to check for the existence of Docker image
+          for version in $versions; do
+              if [ "$(docker manifest inspect life1347/gitlab:${version}-ee > /dev/null 2>&1; echo $?)" != "0" ]; then
+                  # If the Docker image does not exist for this version, append it to newVers
+                  newVers+="${version} "
+              fi
+          done
+
+          # Trim trailing space from newVers
+          newVers=$(echo $newVers | xargs)
+
+          # Print out versions with no Docker image
+          echo "Versions without a Docker image: $newVers"
+
+          # Convert the versions into a JSON array
+          json_array="["
+          for version in $newVers; do
+              json_array+="\"$version\","
+          done
+
+          # Remove the last comma and close the JSON array
+          json_array=${json_array%,}
+          json_array+="]"
+
+          # Print the JSON array
+          echo $json_array >> $GITHUB_OUTPUT
 
   build:
     if: ${{ needs.version.outputs.GITLAB_VERSION != '' }}
@@ -42,14 +64,14 @@ jobs:
       - version
     strategy:
       fail-fast: false
-      # matrix:
-      #   GITLAB_VERSION: ${{ fromJSON(vars.GITLAB_VERSION) }}
+      matrix:
+        GITLAB_VERSION: ${{ fromJSON(needs.version.outputs.GITLAB_VERSION) }}
     env:
       RELEASE_PACKAGE: gitlab-ee
-      # RELEASE_VERSION:  ${{ matrix.GITLAB_VERSION }}-ee.0
-      # PUSH_TAGS: ${{ matrix.GITLAB_VERSION }}-ee
-      RELEASE_VERSION: ${{ needs.version.outputs.GITLAB_VERSION }}-ee.0
-      PUSH_TAGS: ${{ needs.version.outputs.GITLAB_VERSION }}-ee
+      RELEASE_VERSION:  ${{ matrix.GITLAB_VERSION }}-ee.0
+      PUSH_TAGS: ${{ matrix.GITLAB_VERSION }}-ee
+      # RELEASE_VERSION: ${{ needs.version.outputs.GITLAB_VERSION }}-ee.0
+      # PUSH_TAGS: ${{ needs.version.outputs.GITLAB_VERSION }}-ee
     steps:
       - uses: actions/checkout@v3
 
