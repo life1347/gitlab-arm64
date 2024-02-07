@@ -51,7 +51,7 @@ jobs:
           json_array+="]"
 
           # Print the JSON array
-          echo GITLAB_VERSION=${json_array}" >> $GITHUB_OUTPUT
+          echo "GITLAB_VERSION=${json_array}" >> $GITHUB_OUTPUT
 
   build:
     if: ${{ needs.version.outputs.GITLAB_VERSION != '' }}
