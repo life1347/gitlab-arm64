@@ -93,21 +93,26 @@ jobs:
           push_tags=$(echo ${{ env.PUSH_TAGS }} | tr ',' '\n' | xargs -I {} echo "docker.io/${{ secrets.DOCKERHUB_USERNAME }}/gitlab:{}" | tr '\n' ',')
           echo "push_tags=${push_tags}" >> $GITHUB_ENV
 
-      # Generate the push tags for arm64 image (add '-arm64' suffix to the push tags)
-      - name: Generate ARM64 tags
-        id: generate-arm64-tags
-        run: |
-          push_arm64_tags=$(echo ${{ env.push_tags }} | tr ',' '\n' | xargs -I {} echo "{}-arm64" | tr '\n' ',')
-          echo "push_arm64_tags=${push_arm64_tags}" >> $GITHUB_ENV
-
       - name: Build and push ARM64 image
         uses: docker/build-push-action@v3
         with:
           context: .
           # Only builds on the main branch will trigger the push, and forked repositories are excluded
           push: ${{ github.ref == 'refs/heads/main' }}
-          tags: ${{ env.push_arm64_tags }}
+          tags: ${{ env.push_tags }}
           platforms: linux/arm64
+          build-args: |
+            RELEASE_PACKAGE=${{ env.RELEASE_PACKAGE }}
+            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+
+      - name: Build and push x86 image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          # Only builds on the main branch will trigger the push, and forked repositories are excluded
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ env.push_tags }}
+          platforms: linux/amd64
           build-args: |
             RELEASE_PACKAGE=${{ env.RELEASE_PACKAGE }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
