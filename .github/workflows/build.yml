@@ -27,7 +27,7 @@ jobs:
           newVers=""
 
           # Capture the output of the original command
-          versions=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://gitlab.com/gitlab-org/gitlab.git | tail -20 | grep -v "rc" | grep -v "{}" | awk -F'/' '{print $NF}' | awk '{print $1}' | sed 's/-ee//' | awk -F'v' '{print $NF}')
+          versions=$(git -c 'versionsort.suffix=-' ls-remote --tags --sort='v:refname' https://gitlab.com/gitlab-org/gitlab.git | tail -50 | grep -v "rc" | grep -v "{}" | awk -F'/' '{print $NF}' | awk '{print $1}' | sed 's/-ee//' | awk -F'v' '{print $NF}')
 
           # Loop over each version to check for the existence of Docker image
           for version in $versions; do
