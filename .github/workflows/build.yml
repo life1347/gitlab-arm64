@@ -104,18 +104,7 @@ jobs:
           build-args: |
             RELEASE_PACKAGE=${{ env.RELEASE_PACKAGE }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-
-      - name: Build and push x86 image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          # Only builds on the main branch will trigger the push, and forked repositories are excluded
-          push: ${{ github.ref == 'refs/heads/main' }}
-          tags: ${{ env.push_tags }}
-          platforms: linux/amd64
-          build-args: |
-            RELEASE_PACKAGE=${{ env.RELEASE_PACKAGE }}
-            RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+            RELEASE_ARCH=arm64
 
       # Create multi-arch manifest (x86-64 reuses official image, arm64 uses the image built in the previous step)
       - name: Docker multi-arch manifest
