@@ -73,8 +73,6 @@ jobs:
 
       - name: docker login to docker.io
         uses: docker/login-action@v2
-        # Only builds on the main branch will trigger the push, and forked repositories are excluded
-        if: github.ref == 'refs/heads/main'
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -97,8 +95,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          # Only builds on the main branch will trigger the push, and forked repositories are excluded
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: true
           tags: ${{ env.push_tags }}
           platforms: linux/arm64
           build-args: |
@@ -108,8 +105,6 @@ jobs:
 
       # Create multi-arch manifest (x86-64 reuses official image, arm64 uses the image built in the previous step)
       - name: Docker multi-arch manifest
-        # Only builds on the main branch will trigger the push, and forked repositories are excluded
-        if: github.ref == 'refs/heads/main'
         shell: python
         env:
           RELEASE_PACKAGE: ${{ env.RELEASE_PACKAGE }}
